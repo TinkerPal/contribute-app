@@ -1,0 +1,79 @@
+import React, { useEffect } from "react";
+import { Outlet, useNavigate } from "react-router";
+import WalletKitModal from "@/components/WalletKitModal";
+import ScrollToTop from "../ScrollToTop";
+import { useAuth } from "@/hooks/useAuth";
+import { Sparkles } from "lucide-react";
+import { useTwitterAuthCallback } from "@/hooks/useTwitterAuthCallback";
+
+function AuthLayout() {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  // useEffect(() => {
+  //   if (isAuthenticated) {
+  //     if (window.history.length > 1) {
+  //       navigate(-1);
+  //     } else {
+  //       navigate("/", { replace: true });
+  //     }
+  //   }
+  // }, [navigate, isAuthenticated]);
+  useTwitterAuthCallback();
+
+  return (
+    <>
+      <ScrollToTop />
+
+      <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-6 text-center sm:px-6">
+        <div className="pointer-events-none absolute top-[-160px] left-1/2 h-[360px] w-[360px] -translate-x-1/2 rounded-full bg-[#2F0FD1]/10 blur-3xl" />
+        <div className="pointer-events-none absolute right-[-120px] bottom-[-180px] h-[360px] w-[360px] rounded-full bg-[#8B7BFF]/10 blur-3xl" />
+
+        <section className="relative w-full max-w-[500px]">
+          <div className="mb-5 flex items-center justify-center">
+            <div className="inline-flex items-center gap-3 rounded-2xl border border-[#EAECF0] bg-white/80 px-3 py-2 shadow-sm backdrop-blur">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white ring-1 ring-[#EAECF0]">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 500 500"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                >
+                  <path
+                    d="M361.396 70.3565C370.697 78.0725 372.32 79.9895 373.896 92.4051C373.348 103.701 369.583 109.633 361.396 117.579C352.678 121.938 346.097 121.126 336.396 120.356C329.793 117.911 323.574 115.073 317.266 111.947C289.022 98.9473 247.429 103.883 219.317 114.096C175.806 133.229 145.466 165.051 127.444 208.985C113.266 247.173 118.545 283.503 133.618 320.356C141.576 335.48 151.456 347.799 164.174 359.245C166.523 361.48 168.872 363.714 171.292 366.016C190.329 381.521 214.726 392.72 239.174 395.356C241.881 395.65 244.588 395.944 247.377 396.246C281.499 398.142 310.284 384.46 335.745 362.327C337.793 360.393 339.841 358.46 341.952 356.468C344.852 353.739 344.852 353.739 347.811 350.955C361.396 336.95 370.21 321.502 378.65 304.08C383.586 294.079 387.56 286.882 397.507 281.468C411.361 279.956 419.712 281.291 430.841 289.801C436.569 301.258 434.993 314.746 432.012 326.91C412.782 380.406 370.259 413.536 321.368 438.466C272.768 458.509 219.859 450.455 172.822 430.914C156.091 423.202 141.938 412.956 128.063 400.912C125.972 399.118 123.881 397.324 121.726 395.476C103.439 378.598 91.4823 359.225 80.8406 337.023C79.3653 333.947 77.8901 330.871 76.3701 327.702C60.0648 287.168 59.999 230.628 74.6414 189.338C77.018 183.854 79.6084 178.59 82.4031 173.308C83.3755 171.428 84.3479 169.548 85.3497 167.611C115.272 111.462 161.732 75.3148 221.878 56.728C266.393 44.2766 320.148 49.271 361.396 70.3565Z"
+                    fill="#101828"
+                  />
+                  <path
+                    d="M314.326 162.887C331.972 173.414 346.364 187.229 355.632 205.839C357.795 228.305 357.011 250.151 345.019 269.768C331.891 284.093 316.864 296.738 297.204 299.373C274.561 299.698 257.505 297.527 238.887 283.974C222.91 267.934 213.824 248.483 212.133 225.816C212.844 205.925 222.505 192.017 235.349 177.426C256.986 158.517 287.216 152.274 314.326 162.887Z"
+                    fill="#2F0FD1"
+                  />
+                </svg>
+              </div>
+
+              <div className="text-left">
+                <p className="text-sm leading-4 font-semibold text-[#101828]">
+                  Contribute
+                </p>
+                <p className="text-xs text-[#667085]">Contributor access</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="scrollbar-hidden max-h-[calc(100vh-120px)] overflow-y-auto rounded-[28px] border border-[#E6EAF3] bg-white/95 p-5 shadow-[0_24px_80px_rgba(16,24,40,0.10)] backdrop-blur sm:p-8">
+            <Outlet />
+          </div>
+
+          <p className="mt-5 text-xs leading-5 text-[#667085]">
+            Secure access for contributors, builders, and ecosystem projects.
+          </p>
+        </section>
+
+        <WalletKitModal />
+      </main>
+    </>
+  );
+}
+
+export default AuthLayout;
