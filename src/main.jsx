@@ -1,10 +1,9 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { ToastContainer, toast } from "react-toastify";
+import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { createBrowserRouter } from "react-router";
-import { RouterProvider } from "react-router/dom";
+import { createBrowserRouter, RouterProvider } from "react-router";
 
 import DashboardLayout from "./components/dashboard/DashboardLayout";
 import NotFound from "./components/NotFound";
@@ -12,37 +11,35 @@ import AuthLayout from "./components/auth/AuthLayout";
 import VerifyEmail from "./pages/get-started/VerifyEmail";
 import Username from "./pages/get-started/Username";
 import AccountConfiguration from "./pages/get-started/AccountConfiguration";
-import ReactQueryProviders from "./components/ReactQueryProviders";
 import { Provider, useDispatch } from "react-redux";
-import { PersistGate } from "redux-persist/integration/react";
-import { store, persistor } from "./store";
+import { persistor, store } from "./store";
 import GoogleCallback from "./components/GoogleCallback";
 import BindEmail from "./pages/get-started/BindEmail";
 import CreateWallet from "./pages/get-started/CreateWallet";
 import GetStarted from "./pages/get-started/GetStarted";
 import WalletCreatedSuccess from "./pages/get-started/WalletCreatedSuccess";
 import ContributeApp from "./pages/dashboard/ContributeApp";
-import MyApplications from "./pages/dashboard/MyApplications";
 import TaskDetails from "./pages/dashboard/TaskDetails";
 import ApplyTask from "./pages/dashboard/ApplyTask";
 import QuestMarketplace from "./pages/quest/QuestMarketplace";
-import { QuestProvider } from "./context/QuestContext";
 import QuestDetailPage from "./pages/quest/QuestDetailsPage";
 import ApplyQuestPage from "./pages/quest/ApplyQuestPage";
 import DashboardHome from "./pages/dashboard/DashboardHome";
-import SigninWithTwitter from "./pages/get-started/SigninWithTwitter";
 import ContributorProfilePage from "./pages/profiles/ContributorProfilePage";
-import { AuthProvider } from "./context/AuthContext";
 import CreateXQuestPage from "./pages/quest/CreateXQuestPage";
 import LeaderboardPage from "./pages/dashboard/LeaderboardPage";
 import MyContributions from "./pages/dashboard/MyContributions";
 import MyEarnings from "./pages/dashboard/MyEarnings";
 import ComingSoonPage from "./pages/quest/ComingSoonPage";
-
-import { SocketFiProvider } from "@socketfi/react";
-import { setSocketfiSession } from "./store/socketfiAuthSlice";
-import { useWallet } from "./hooks/useWallet";
 import SigninWithPasskey from "./pages/get-started/SigninWithPasskey";
+import Connect from "./pages/get-started/Connect";
+import { useWallet } from "./hooks/useWallet";
+import { setSocketfiSession } from "./store/socketfiAuthSlice";
+import { PersistGate } from "redux-persist/integration/react";
+import ReactQueryProviders from "./components/ReactQueryProviders";
+import { AuthProvider } from "./context/AuthContext";
+import { QuestProvider } from "./context/QuestContext";
+import { SocketFiProvider } from "@socketfi/react";
 
 const FEATURES = {
   tasks: false,
@@ -62,7 +59,7 @@ function featureRoute(isLive, Component, comingSoonProps = {}) {
       };
 }
 
-const router = createBrowserRouter([
+export const router = createBrowserRouter([
   {
     path: "/",
     Component: DashboardLayout,
@@ -213,6 +210,7 @@ const router = createBrowserRouter([
       { path: "create-wallet", Component: CreateWallet },
       { path: "wallet-created-success", Component: WalletCreatedSuccess },
       { path: "account-configuration", Component: AccountConfiguration },
+      { path: "connect", Component: Connect },
     ],
   },
 

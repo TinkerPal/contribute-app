@@ -75,7 +75,7 @@ export function createWallet(network) {
 }
 
 export function linkedAccount() {
-  return api.get(`${import.meta.env.VITE_BASE_URL}/users/configured-accounts`);
+  return api.get("/api/users/me");
 }
 
 export function getUser() {
@@ -331,6 +331,10 @@ export const updateBio = (bio) => {
   });
 };
 
+export function completeOnboarding() {
+  return api.patch(`${import.meta.env.VITE_BASE_URL}/api/users/complete-onboarding`);
+}
+
 export function initSignTransaction(data) {
   return api.post(
     `${import.meta.env.VITE_BASE_URL}/quests/init-sign-transaction`,
@@ -344,3 +348,5 @@ export function submitTransactionExternal(data) {
     data,
   );
 }
+
+

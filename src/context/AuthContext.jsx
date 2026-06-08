@@ -1,4 +1,6 @@
 import { createContext, useEffect, useState } from "react";
+import { store } from "@/store";
+import { login as reduxLogin } from "@/store/authSlice";
 
 const API_URL = "http://localhost:4000";
 
@@ -57,6 +59,8 @@ export function AuthProvider({ children }) {
 
     setAccessToken(token);
     setUser(user);
+
+    store.dispatch(reduxLogin({ token, user }));
   }
 
   // 🚪 Logout

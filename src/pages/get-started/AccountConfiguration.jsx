@@ -44,7 +44,7 @@ const ACCOUNTS_TO_LINK = [
 ];
 
 function AccountConfiguration() {
-  const { login, token, username } = useAuth();
+  const { login, accessToken: token, username } = useAuth();
   const navigate = useNavigate();
 
   const [uploading, setUploading] = useState(false);
@@ -152,34 +152,31 @@ function AccountConfiguration() {
   };
 
   const handleLinkAccount = async (accountType) => {
-    const userId = user?.id;
-
-    if (accountType !== "telegram" && !userId && accountType !== "twitter") {
+    if (accountType !== "telegram" && !token) {
       toast.error("Unable to link account. Please try again.");
       return;
     }
 
-    if (accountType === "github") {
-      setLinkingAccount("github");
-      window.location.href = `${
-        import.meta.env.VITE_BASE_URL
-      }/auth/github?userId=${userId}`;
-      return;
-    }
-
-    if (accountType === "discord") {
-      setLinkingAccount("discord");
-      window.location.href = `${
-        import.meta.env.VITE_BASE_URL
-      }/auth/discord?userId=${userId}`;
-      return;
-    }
-
-    if (accountType === "twitter") {
-      setLinkingAccount("twitter");
-      window.location.href = `${
-        import.meta.env.VITE_BASE_URL
-      }/auth/twitter?token=${token}`;
+    if (accountType === "github" || accountType === "discord" || accountType === "twitter") {
+      setLinkingAccount(accountType);
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_BASE_URL}/api/bind-socials/${accountType}/init`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(data?.message || `Failed to link ${accountType} account`);
+        }
+        window.location.href = `${import.meta.env.VITE_BASE_URL}${data.url}`;
+      } catch (error) {
+        toast.error(error.message);
+        setLinkingAccount(null);
+      }
       return;
     }
 

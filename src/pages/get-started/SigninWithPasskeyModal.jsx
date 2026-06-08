@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +24,6 @@ import { ImSpinner5 } from "react-icons/im";
 import { toast } from "react-toastify";
 
 import Modal from "@/components/Modal";
-import { savePasskeySession } from "@/hooks/socketfiAuth";
 import { useAuth } from "@/hooks/useAuth";
 import {
   getItemFromSessionStorage,
@@ -31,6 +31,8 @@ import {
   setItemInSessionStorage,
 } from "@/lib/utils";
 import { linkedAccount, updateBio, uploadProfilePicture } from "@/services";
+
+const API_URL = "http://localhost:4000";
 
 const ACCOUNTS_TO_LINK = [
   {
@@ -87,8 +89,15 @@ function normalizeLinkedAccounts(response) {
 }
 
 function SigninWithPasskeyModal() {
-  const { passkeyModalIsOpen, setPasskeyModalIsOpen, login, token, username } =
-    useAuth();
+  const {
+    passkeyModalIsOpen,
+    setPasskeyModalIsOpen,
+    login,
+    accessToken: token,
+    username,
+  } = useAuth();
+
+  const navigate = useNavigate();
 
   const socketfi = useSocketFi();
 
@@ -185,13 +194,74 @@ function SigninWithPasskeyModal() {
 
       const session = await socketfi.authenticate();
 
-      savePasskeySession(session);
+      console.log({ session });
 
+      const socketfiAccessToken =
+        session?.session?.socketfiAccessToken || session?.socketfiAccessToken;
+      const address =
+        session?.session?.address?.PUBLIC || session?.session?.address?.TESTNET;
+      const userId = session?.session?.userProfile?.userId;
+
+      if (!socketfiAccessToken) {
+        throw new Error("Could not retrieve SocketFi session token");
+      }
+
+      const res = await fetch(`${API_URL}/auth/verify-auth`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          socketfiAccessToken,
+          address,
+          userId,
+        }),
+      });
+
+      const data = await res.json();
+
+      console.log({ data });
+
+      if (!res.ok) {
+        throw new Error(
+          data?.message || `Authentication failed (${res.status})`,
+        );
+      }
+
+      const { token: appAccessToken, user: appUser } = data;
+
+      if (!appAccessToken) {
+        throw new Error(data?.message || "Authentication verification failed");
+      }
+
+      // login({ token: appAccessToken, user: appUser });
+
+      // Save SocketFi wallet/address data to localStorage
+      // const { address, userProfile } = session?.session || {};
+
+      localStorage.setItem("socketfiAccessToken", socketfiAccessToken);
+      localStorage.setItem("authVerified", "true");
+
+      if (address?.TESTNET) {
+        localStorage.setItem("walletAddress_TESTNET", address.TESTNET);
+      }
+      if (address?.PUBLIC) {
+        localStorage.setItem("walletAddress_PUBLIC", address.PUBLIC);
+      }
+      if (address) {
+        localStorage.setItem("walletAddress", JSON.stringify(address));
+      }
+
+      // Update AuthContext with the proper app-level token and user
+      login({ token: appAccessToken, user: appUser });
+
+      // Set user in local component state for setup flow
       const sessionUser =
         session?.user ||
         session?.userProfile ||
         session?.data?.user ||
         session?.data?.userProfile ||
+        appUser ||
         null;
 
       if (sessionUser) {
@@ -211,17 +281,9 @@ function SigninWithPasskeyModal() {
         },
       });
 
-      if (linkedAccountsFromSession.length > 0) {
-        setPasskeyModalIsOpen(false);
-        resetModalState();
-        return;
-      }
-
-      setView("setup");
-
-      setTimeout(() => {
-        refetchLinkedAccounts?.();
-      }, 0);
+      setPasskeyModalIsOpen(false);
+      resetModalState();
+      navigate("/auth/connect");
     } catch (error) {
       toast.error(
         error?.response?.data?.message ||
@@ -234,28 +296,40 @@ function SigninWithPasskeyModal() {
   }
 
   async function handleLinkAccount(accountType) {
-    const userId = user?.id;
-
-    if (accountType !== "telegram" && accountType !== "twitter" && !userId) {
+    if (accountType !== "telegram" && !token) {
       toast.error("Unable to link account. Please try again.");
       return;
     }
 
-    if (accountType === "github") {
-      setLinkingAccount("github");
-      window.location.href = `${import.meta.env.VITE_BASE_URL}/auth/github?userId=${userId}`;
-      return;
-    }
+    if (
+      accountType === "github" ||
+      accountType === "discord" ||
+      accountType === "twitter"
+    ) {
+      setLinkingAccount(accountType);
+      try {
+        const res = await fetch(
+          `${API_URL}/api/bind-socials/${accountType}/init`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
 
-    if (accountType === "discord") {
-      setLinkingAccount("discord");
-      window.location.href = `${import.meta.env.VITE_BASE_URL}/auth/discord?userId=${userId}`;
-      return;
-    }
-
-    if (accountType === "twitter") {
-      setLinkingAccount("twitter");
-      window.location.href = `${import.meta.env.VITE_BASE_URL}/auth/twitter?token=${token}`;
+        console.log({ res });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          throw new Error(
+            data?.message || `Failed to link ${accountType} account`,
+          );
+        }
+        setItemInSessionStorage("pendingSocialLink", accountType);
+        window.location.href = `${API_URL}${data.url}`;
+      } catch (error) {
+        toast.error(error.message);
+        setLinkingAccount(null);
+      }
       return;
     }
 
@@ -282,17 +356,14 @@ function SigninWithPasskeyModal() {
     try {
       setLinkingAccount("telegram");
 
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/auth/telegram/init-link`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ username: cleanUsername }),
+      const response = await fetch(`${API_URL}/auth/telegram/init-link`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ username: cleanUsername }),
+      });
 
       const data = await response.json().catch(() => ({}));
 
@@ -331,17 +402,14 @@ function SigninWithPasskeyModal() {
     try {
       setLinkingAccount("telegram");
 
-      const response = await fetch(
-        `${import.meta.env.VITE_BASE_URL}/auth/telegram/verify-otp`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ otp: cleanOtp }),
+      const response = await fetch(`${API_URL}/auth/telegram/verify-otp`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-      );
+        body: JSON.stringify({ otp: cleanOtp }),
+      });
 
       const data = await response.json().catch(() => ({}));
 
