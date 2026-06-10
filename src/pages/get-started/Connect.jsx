@@ -46,24 +46,25 @@ const ACCOUNTS_TO_LINK = [
 ];
 
 function normalizeLinkedAccounts(response) {
-  const authAccounts = response?.data?.authAccounts || response?.data?.content;
-  if (!authAccounts) return [];
-  if (Array.isArray(authAccounts)) {
-    if (authAccounts.length > 0 && typeof authAccounts[0] === "string") {
-      return authAccounts.map((provider) => ({
+  console.log({ response });
+  const platformProfiles = response?.data?.platformProfiles;
+  if (!platformProfiles) return [];
+  if (Array.isArray(platformProfiles)) {
+    if (platformProfiles.length > 0 && typeof platformProfiles[0] === "string") {
+      return platformProfiles.map((provider) => ({
         provider: provider.toLowerCase(),
         username: null,
       }));
     }
-    return authAccounts
+    return platformProfiles
       .map((account) => ({
         provider: account?.provider?.toLowerCase(),
         username: account?.username || account?.providerUsername || null,
       }))
       .filter((account) => account.provider);
   }
-  if (Array.isArray(authAccounts.linkedAccounts)) {
-    return authAccounts.linkedAccounts.map((provider) => ({
+  if (Array.isArray(platformProfiles.linkedAccounts)) {
+    return platformProfiles.linkedAccounts.map((provider) => ({
       provider: provider.toLowerCase(),
       username: null,
     }));
@@ -135,7 +136,10 @@ function Connect() {
       try {
         const res = await fetch(`${API_URL}/api/bind-socials/exchange`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ code }),
         });
 
@@ -154,7 +158,7 @@ function Connect() {
         navigate("/auth/connect", { replace: true });
       }
     })();
-  }, [searchParams, login, navigate]);
+  }, [searchParams, login, navigate, token]);
 
   useEffect(() => {
     if (!token) {
