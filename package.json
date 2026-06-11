@@ -37,7 +37,7 @@
     "@radix-ui/react-slot": "^1.2.4",
     "@react-oauth/google": "^0.13.4",
     "@reduxjs/toolkit": "^2.11.2",
-    "@socketfi/react": "^1.1.0",
+    "@socketfi/react": "^1.2.1",
     "@stellar/freighter-api": "^6.0.1",
     "@stellar/stellar-sdk": "^14.6.1",
     "@tailwindcss/vite": "^4.1.13",
